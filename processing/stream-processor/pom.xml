@@ -20,7 +20,7 @@
         <!-- Pinned to the versions Flink 2.2.1 and connector 5.0.0-2.2 are built and tested against. -->
         <kafka.clients.version>4.2.0</kafka.clients.version>
         <avro.version>1.11.4</avro.version>
-        <log4j.version>2.24.3</log4j.version>
+        <log4j.version>2.26.1</log4j.version>
         <junit.version>5.11.4</junit.version>
         <assertj.version>3.27.7</assertj.version>
 
