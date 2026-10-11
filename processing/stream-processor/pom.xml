@@ -21,7 +21,7 @@
         <kafka.clients.version>4.2.0</kafka.clients.version>
         <avro.version>1.11.4</avro.version>
         <log4j.version>2.24.3</log4j.version>
-        <junit.version>5.11.4</junit.version>
+        <junit.version>5.14.4</junit.version>
         <assertj.version>3.27.7</assertj.version>
 
         <schemas.dir>${project.basedir}/../../schemas/avro</schemas.dir>
