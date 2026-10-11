@@ -10,7 +10,7 @@ COPY services/query-api/src ./src
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-dev --no-editable
 
 FROM python:3.13-slim-bookworm
-RUN useradd --system --uid 10001 --no-create-home app
+RUN useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin app
 COPY --from=build /opt/venv /opt/venv
 WORKDIR /app
 ENV PATH=/opt/venv/bin:$PATH PYTHONUNBUFFERED=1
