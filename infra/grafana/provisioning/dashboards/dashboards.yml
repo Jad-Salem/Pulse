@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: pulse
+    type: file
+    folder: Pulse
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    disableDeletion: true
+    options:
+      path: /etc/grafana/dashboards

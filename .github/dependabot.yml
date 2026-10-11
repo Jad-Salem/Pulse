@@ -1,0 +1,36 @@
+version: 2
+updates:
+  - package-ecosystem: uv
+    directories: ["/services/collector", "/services/query-api", "/tools/platform-init", "/tools/load-generator", "/tests/e2e"]
+    schedule: {interval: weekly}
+    groups:
+      python: {patterns: ["*"]}
+
+  - package-ecosystem: maven
+    directory: /processing/stream-processor
+    schedule: {interval: weekly}
+    ignore:
+      # Flink, its connectors, Avro and kafka-clients move together; upgrade them deliberately.
+      - dependency-name: "org.apache.flink:*"
+      - dependency-name: "org.apache.avro:*"
+      - dependency-name: "org.apache.kafka:*"
+      # Flink's test utilities target JUnit 5.
+      - dependency-name: "org.junit:junit-bom"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: docker
+    directories: ["/services/collector", "/services/query-api", "/tools/platform-init", "/tools/load-generator", "/processing/stream-processor"]
+    schedule: {interval: weekly}
+    ignore:
+      # The Flink image must match the Kafka connector release (5.0.0-2.2 targets Flink 2.2).
+      - dependency-name: "flink"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # The build JDK stays on 17, the runtime of the Flink image.
+      - dependency-name: "maven"
+      # A Python minor upgrade is a deliberate change across all services.
+      - dependency-name: "python"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: {interval: weekly}

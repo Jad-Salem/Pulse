@@ -1,0 +1,24 @@
+{
+  "type": "record",
+  "name": "SessionSummary",
+  "namespace": "io.github.jad_salem.pulse.schemas",
+  "doc": "One row per closed session (topic sessions). Emitted once, when the event-time session window closes after the inactivity gap.",
+  "fields": [
+    {"name": "session_id", "type": "string"},
+    {"name": "user_id", "type": "string"},
+    {"name": "session_start", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "session_end", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "duration_ms", "type": "long"},
+    {"name": "event_count", "type": "int"},
+    {"name": "page_views", "type": "int"},
+    {"name": "product_views", "type": "int"},
+    {"name": "add_to_carts", "type": "int"},
+    {"name": "checkouts", "type": "int"},
+    {"name": "purchases", "type": "int"},
+    {"name": "revenue_cents", "type": "long"},
+    {"name": "converted", "type": "boolean"},
+    {"name": "country", "type": "string"},
+    {"name": "device", "type": "string"},
+    {"name": "landing_page", "type": "string"}
+  ]
+}

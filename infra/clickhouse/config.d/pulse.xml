@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<clickhouse>
+    <logger>
+        <level>information</level>
+        <console>1</console>
+    </logger>
+
+    <!-- Native Prometheus endpoint, scraped by Prometheus. -->
+    <prometheus>
+        <endpoint>/metrics</endpoint>
+        <port>9363</port>
+        <metrics>true</metrics>
+        <events>true</events>
+        <asynchronous_metrics>true</asynchronous_metrics>
+    </prometheus>
+
+    <!--
+      librdkafka settings for every Kafka engine table.
+      read_committed: only see records from committed Flink transactions (exactly-once upstream).
+      earliest: a brand-new consumer group starts from the beginning of the topic's retention.
+    -->
+    <kafka>
+        <isolation_level>read_committed</isolation_level>
+        <auto_offset_reset>earliest</auto_offset_reset>
+    </kafka>
+</clickhouse>

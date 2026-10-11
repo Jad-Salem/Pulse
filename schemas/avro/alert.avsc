@@ -1,0 +1,18 @@
+{
+  "type": "record",
+  "name": "Alert",
+  "namespace": "io.github.jad_salem.pulse.schemas",
+  "doc": "A real-time detection raised by the stream processor (topic alerts).",
+  "fields": [
+    {"name": "alert_id", "type": "string", "doc": "Deterministic id, so a replay produces the same id."},
+    {"name": "alert_type", "type": "string", "doc": "e.g. purchase_velocity."},
+    {"name": "severity", "type": "string", "doc": "One of: info, warning, critical."},
+    {"name": "entity_id", "type": "string", "doc": "The subject of the alert (a user_id for purchase_velocity)."},
+    {"name": "description", "type": "string"},
+    {"name": "observed_value", "type": "double"},
+    {"name": "threshold", "type": "double"},
+    {"name": "window_start", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "window_end", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "detected_at", "type": {"type": "long", "logicalType": "timestamp-millis"}}
+  ]
+}

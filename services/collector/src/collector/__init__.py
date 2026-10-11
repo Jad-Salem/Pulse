@@ -1,0 +1,1 @@
+"""Pulse edge event collector."""

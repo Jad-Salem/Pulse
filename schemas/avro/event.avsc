@@ -1,0 +1,23 @@
+{
+  "type": "record",
+  "name": "Event",
+  "namespace": "io.github.jad_salem.pulse.schemas",
+  "doc": "A behavioural event accepted at the edge (topic events.raw). Money is integer USD cents. Timestamps are UTC epoch millis.",
+  "fields": [
+    {"name": "event_id", "type": "string", "doc": "Client-generated UUID; the idempotency key used for de-duplication."},
+    {"name": "event_type", "type": "string", "doc": "One of: page_view, product_view, add_to_cart, remove_from_cart, checkout_started, purchase."},
+    {"name": "event_time", "type": {"type": "long", "logicalType": "timestamp-millis"}, "doc": "When the event happened on the client (event time)."},
+    {"name": "received_at", "type": {"type": "long", "logicalType": "timestamp-millis"}, "doc": "When the collector accepted the event."},
+    {"name": "user_id", "type": "string"},
+    {"name": "session_id", "type": "string", "doc": "Client-side session identifier."},
+    {"name": "page_url", "type": "string"},
+    {"name": "referrer", "type": ["null", "string"], "default": null},
+    {"name": "product_id", "type": ["null", "string"], "default": null, "doc": "Required for product_view, add_to_cart, remove_from_cart and purchase."},
+    {"name": "quantity", "type": ["null", "int"], "default": null, "doc": "Required for add_to_cart, remove_from_cart and purchase."},
+    {"name": "unit_price_cents", "type": ["null", "long"], "default": null, "doc": "Required for add_to_cart, remove_from_cart and purchase."},
+    {"name": "order_id", "type": ["null", "string"], "default": null, "doc": "Required for purchase. One purchase event per order line; lines share the order_id."},
+    {"name": "country", "type": "string", "doc": "ISO 3166-1 alpha-2, upper case."},
+    {"name": "device", "type": "string", "doc": "One of: desktop, mobile, tablet, unknown."},
+    {"name": "user_agent", "type": ["null", "string"], "default": null}
+  ]
+}

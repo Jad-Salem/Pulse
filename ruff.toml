@@ -1,0 +1,36 @@
+# Shared lint/format configuration for every Python project in the repo.
+target-version = "py312"
+line-length = 100
+
+[lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "B",        # bugbear
+    "UP",       # pyupgrade
+    "SIM",      # simplify
+    "S",        # bandit (security)
+    "ASYNC",    # async pitfalls
+    "BLE",      # blind except
+    "RUF",
+    "PT",       # pytest style
+    "DTZ",      # timezone-naive datetimes
+    "T20",      # stray print()
+]
+ignore = ["S101"]  # assert is fine in tests
+
+[lint.isort]
+known-first-party = ["collector", "query_api", "platform_init", "load_generator", "e2e"]
+
+[lint.per-file-ignores]
+"**/tests/**" = ["S", "DTZ"]
+# SQL fragments there come only from fixed allow-lists; every request value is bound server-side.
+"**/query_api/repository.py" = ["S608"]
+# Simulation randomness, not security.
+"**/load_generator/**" = ["S311"]
+# Static SQL and PromQL for dashboards (no runtime input).
+"infra/grafana/generate_dashboards.py" = ["E501", "S608"]
+
+[format]
+quote-style = "double"

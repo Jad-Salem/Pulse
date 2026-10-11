@@ -1,0 +1,4 @@
+# LF everywhere: these files are mounted into or built into Linux containers.
+* text=auto eol=lf
+*.png binary
+*.jpg binary

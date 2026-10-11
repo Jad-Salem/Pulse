@@ -1,0 +1,28 @@
+{
+  "type": "record",
+  "name": "EnrichedEvent",
+  "namespace": "io.github.jad_salem.pulse.schemas",
+  "doc": "A validated, de-duplicated event joined with the product catalog (topic events.enriched). Flat by design so the OLAP store can ingest it column-for-column.",
+  "fields": [
+    {"name": "event_id", "type": "string"},
+    {"name": "event_type", "type": "string"},
+    {"name": "event_time", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "received_at", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "processed_at", "type": {"type": "long", "logicalType": "timestamp-millis"}, "doc": "When the stream processor emitted the event."},
+    {"name": "user_id", "type": "string"},
+    {"name": "session_id", "type": "string"},
+    {"name": "page_url", "type": "string"},
+    {"name": "referrer", "type": ["null", "string"], "default": null},
+    {"name": "product_id", "type": ["null", "string"], "default": null},
+    {"name": "product_name", "type": ["null", "string"], "default": null},
+    {"name": "product_category", "type": ["null", "string"], "default": null, "doc": "null when the event has no product; 'unknown' when the product is not in the catalog."},
+    {"name": "product_brand", "type": ["null", "string"], "default": null},
+    {"name": "quantity", "type": ["null", "int"], "default": null},
+    {"name": "unit_price_cents", "type": ["null", "long"], "default": null},
+    {"name": "revenue_cents", "type": "long", "doc": "quantity * unit_price_cents for purchase events, 0 otherwise."},
+    {"name": "order_id", "type": ["null", "string"], "default": null},
+    {"name": "country", "type": "string"},
+    {"name": "device", "type": "string"},
+    {"name": "user_agent", "type": ["null", "string"], "default": null}
+  ]
+}

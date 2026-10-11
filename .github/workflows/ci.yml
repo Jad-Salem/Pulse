@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python / ${{ matrix.project }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [services/collector, services/query-api, tools/platform-init, tools/load-generator]
+    defaults:
+      run:
+        working-directory: ${{ matrix.project }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: ${{ matrix.project }}/uv.lock
+      - run: uv sync --locked
+      - name: Lint
+        run: uv run ruff check . && uv run ruff format --check .
+      - name: Type-check
+        run: uv run mypy src tests
+      - name: Test
+        run: uv run pytest
+
+  e2e-suite-static:
+    name: Python / tests/e2e (static checks)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tests/e2e
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          python-version: "3.13"
+      - run: uv sync --locked
+      - run: uv run ruff check . && uv run ruff format --check . && uv run mypy .
+
+  java:
+    name: Java / stream-processor
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - name: Build and test (unit + MiniCluster)
+        run: mvn -B -ntp -f processing/stream-processor/pom.xml verify
+
+  config:
+    name: Config / compose, dashboards, rules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Compose file is valid
+        run: docker compose config --quiet
+      - name: Dashboards are generated from code
+        run: |
+          python3 infra/grafana/generate_dashboards.py
+          git diff --exit-code infra/grafana/dashboards
+      - name: Prometheus config and rules are valid
+        run: |
+          docker run --rm -v "$PWD/infra/prometheus:/etc/prometheus:ro" --entrypoint promtool \
+            prom/prometheus:v3.15.0 check config /etc/prometheus/prometheus.yml
+
+  e2e:
+    name: End-to-end (docker compose)
+    needs: [python, java, config]
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      PULSE_SESSION_GAP_SECONDS: "20"
+      FLINK_CHECKPOINT_INTERVAL: 5s
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          python-version: "3.13"
+      - name: Build images
+        run: docker compose build
+      - name: Start the platform
+        run: docker compose up -d
+      - name: Wait until data flows end to end
+        run: bash scripts/wait-for-stack.sh 600
+      - name: Run end-to-end tests
+        working-directory: tests/e2e
+        run: uv sync --locked && uv run pytest -v
+      - name: Diagnostics
+        if: failure()
+        run: |
+          docker compose ps -a
+          docker compose logs --no-color --tail=300
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

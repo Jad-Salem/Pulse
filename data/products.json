@@ -1,0 +1,254 @@
+[
+  {
+    "product_id": "P0001",
+    "name": "Wireless Earbuds",
+    "category": "electronics",
+    "brand": "Voltix",
+    "list_price_cents": 19098
+  },
+  {
+    "product_id": "P0002",
+    "name": "Noise-Cancelling Headphones",
+    "category": "electronics",
+    "brand": "Voltix",
+    "list_price_cents": 10298
+  },
+  {
+    "product_id": "P0003",
+    "name": "4K Monitor 27in",
+    "category": "electronics",
+    "brand": "Voltix",
+    "list_price_cents": 22798
+  },
+  {
+    "product_id": "P0004",
+    "name": "Mechanical Keyboard",
+    "category": "electronics",
+    "brand": "Voltix",
+    "list_price_cents": 35898
+  },
+  {
+    "product_id": "P0005",
+    "name": "USB-C Hub",
+    "category": "electronics",
+    "brand": "Voltix",
+    "list_price_cents": 4998
+  },
+  {
+    "product_id": "P0006",
+    "name": "Portable SSD 1TB",
+    "category": "electronics",
+    "brand": "Voltix",
+    "list_price_cents": 6298
+  },
+  {
+    "product_id": "P0007",
+    "name": "Smartwatch",
+    "category": "electronics",
+    "brand": "Voltix",
+    "list_price_cents": 44598
+  },
+  {
+    "product_id": "P0008",
+    "name": "Bluetooth Speaker",
+    "category": "electronics",
+    "brand": "Voltix",
+    "list_price_cents": 29998
+  },
+  {
+    "product_id": "P0009",
+    "name": "Ceramic Pour-Over Set",
+    "category": "home",
+    "brand": "Hearth & Co",
+    "list_price_cents": 3998
+  },
+  {
+    "product_id": "P0010",
+    "name": "Linen Duvet Cover",
+    "category": "home",
+    "brand": "Hearth & Co",
+    "list_price_cents": 10898
+  },
+  {
+    "product_id": "P0011",
+    "name": "Cast Iron Skillet",
+    "category": "home",
+    "brand": "Hearth & Co",
+    "list_price_cents": 16498
+  },
+  {
+    "product_id": "P0012",
+    "name": "Air Purifier",
+    "category": "home",
+    "brand": "Hearth & Co",
+    "list_price_cents": 2998
+  },
+  {
+    "product_id": "P0013",
+    "name": "Desk Lamp",
+    "category": "home",
+    "brand": "Hearth & Co",
+    "list_price_cents": 24798
+  },
+  {
+    "product_id": "P0014",
+    "name": "Throw Blanket",
+    "category": "home",
+    "brand": "Hearth & Co",
+    "list_price_cents": 14498
+  },
+  {
+    "product_id": "P0015",
+    "name": "Chef's Knife",
+    "category": "home",
+    "brand": "Hearth & Co",
+    "list_price_cents": 6998
+  },
+  {
+    "product_id": "P0016",
+    "name": "Merino Crew Sweater",
+    "category": "apparel",
+    "brand": "Northline",
+    "list_price_cents": 2298
+  },
+  {
+    "product_id": "P0017",
+    "name": "Waterproof Shell Jacket",
+    "category": "apparel",
+    "brand": "Northline",
+    "list_price_cents": 3598
+  },
+  {
+    "product_id": "P0018",
+    "name": "Trail Running Shoes",
+    "category": "apparel",
+    "brand": "Northline",
+    "list_price_cents": 12498
+  },
+  {
+    "product_id": "P0019",
+    "name": "Organic Cotton Tee",
+    "category": "apparel",
+    "brand": "Northline",
+    "list_price_cents": 12098
+  },
+  {
+    "product_id": "P0020",
+    "name": "Wool Beanie",
+    "category": "apparel",
+    "brand": "Northline",
+    "list_price_cents": 3098
+  },
+  {
+    "product_id": "P0021",
+    "name": "Canvas Tote",
+    "category": "apparel",
+    "brand": "Northline",
+    "list_price_cents": 7498
+  },
+  {
+    "product_id": "P0022",
+    "name": "Designing Data-Intensive Systems",
+    "category": "books",
+    "brand": "Folio Press",
+    "list_price_cents": 2598
+  },
+  {
+    "product_id": "P0023",
+    "name": "The Stream Processing Handbook",
+    "category": "books",
+    "brand": "Folio Press",
+    "list_price_cents": 5598
+  },
+  {
+    "product_id": "P0024",
+    "name": "Practical SQL Analytics",
+    "category": "books",
+    "brand": "Folio Press",
+    "list_price_cents": 4798
+  },
+  {
+    "product_id": "P0025",
+    "name": "Distributed Systems in Practice",
+    "category": "books",
+    "brand": "Folio Press",
+    "list_price_cents": 2398
+  },
+  {
+    "product_id": "P0026",
+    "name": "The Pragmatic Data Engineer",
+    "category": "books",
+    "brand": "Folio Press",
+    "list_price_cents": 5698
+  },
+  {
+    "product_id": "P0027",
+    "name": "Yoga Mat",
+    "category": "sports",
+    "brand": "Apex Motion",
+    "list_price_cents": 7398
+  },
+  {
+    "product_id": "P0028",
+    "name": "Adjustable Dumbbells",
+    "category": "sports",
+    "brand": "Apex Motion",
+    "list_price_cents": 12498
+  },
+  {
+    "product_id": "P0029",
+    "name": "Insulated Water Bottle",
+    "category": "sports",
+    "brand": "Apex Motion",
+    "list_price_cents": 33298
+  },
+  {
+    "product_id": "P0030",
+    "name": "Resistance Bands Set",
+    "category": "sports",
+    "brand": "Apex Motion",
+    "list_price_cents": 33198
+  },
+  {
+    "product_id": "P0031",
+    "name": "Cycling Gloves",
+    "category": "sports",
+    "brand": "Apex Motion",
+    "list_price_cents": 30898
+  },
+  {
+    "product_id": "P0032",
+    "name": "Foam Roller",
+    "category": "sports",
+    "brand": "Apex Motion",
+    "list_price_cents": 4198
+  },
+  {
+    "product_id": "P0033",
+    "name": "Vitamin C Serum",
+    "category": "beauty",
+    "brand": "Lumen Botanics",
+    "list_price_cents": 4898
+  },
+  {
+    "product_id": "P0034",
+    "name": "Daily Moisturizer SPF 30",
+    "category": "beauty",
+    "brand": "Lumen Botanics",
+    "list_price_cents": 4998
+  },
+  {
+    "product_id": "P0035",
+    "name": "Clay Face Mask",
+    "category": "beauty",
+    "brand": "Lumen Botanics",
+    "list_price_cents": 3798
+  },
+  {
+    "product_id": "P0036",
+    "name": "Argan Hair Oil",
+    "category": "beauty",
+    "brand": "Lumen Botanics",
+    "list_price_cents": 1598
+  }
+]

@@ -1,0 +1,43 @@
+# Declarative topic definitions, applied idempotently by tools/platform-init.
+# In a Kubernetes deployment the same information becomes Strimzi KafkaTopic resources.
+defaults:
+  replication_factor: 3
+  config:
+    min.insync.replicas: "2"
+
+topics:
+  - name: events.raw
+    partitions: 6
+    value_schema: event.avsc
+    config:
+      retention.ms: "604800000" # 7 days: the replay window for the stream processor
+
+  - name: products
+    partitions: 3
+    value_schema: product.avsc
+    config:
+      cleanup.policy: compact # latest record per product_id is kept forever
+      min.compaction.lag.ms: "60000"
+
+  - name: events.enriched
+    partitions: 6
+    value_schema: enriched_event.avsc
+    config:
+      retention.ms: "604800000"
+
+  - name: sessions
+    partitions: 3
+    value_schema: session_summary.avsc
+    config:
+      retention.ms: "604800000"
+
+  - name: alerts
+    partitions: 3
+    value_schema: alert.avsc
+    config:
+      retention.ms: "2592000000" # 30 days
+
+  - name: events.dlq
+    partitions: 3
+    config:
+      retention.ms: "1209600000" # 14 days to inspect and replay

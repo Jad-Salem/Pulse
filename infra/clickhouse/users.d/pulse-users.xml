@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<!--
+  Least-privilege users for the serving layer. The admin user (migrations only) is created by the
+  image entrypoint from CLICKHOUSE_USER / CLICKHOUSE_PASSWORD. Passwords come from the environment.
+-->
+<clickhouse>
+    <profiles>
+        <!-- readonly=2: SELECT only, but clients may still set per-query settings (clickhouse-connect does). -->
+        <serving>
+            <readonly>2</readonly>
+            <max_execution_time>15</max_execution_time>
+            <max_memory_usage>2000000000</max_memory_usage>
+            <max_result_rows>1000000</max_result_rows>
+            <result_overflow_mode>throw</result_overflow_mode>
+        </serving>
+    </profiles>
+
+    <quotas>
+        <serving>
+            <interval>
+                <duration>60</duration>
+                <queries>6000</queries>
+                <errors>600</errors>
+            </interval>
+        </serving>
+    </quotas>
+
+    <users>
+        <query_api>
+            <password from_env="CLICKHOUSE_QUERY_API_PASSWORD"/>
+            <profile>serving</profile>
+            <quota>serving</quota>
+            <networks><ip>::/0</ip></networks>
+            <grants>
+                <query>GRANT SELECT ON pulse.*</query>
+                <!-- clickhouse-connect and Grafana read the session's settings on connect. -->
+                <query>GRANT SELECT ON system.settings</query>
+            </grants>
+        </query_api>
+
+        <grafana>
+            <password from_env="CLICKHOUSE_GRAFANA_PASSWORD"/>
+            <profile>serving</profile>
+            <quota>serving</quota>
+            <networks><ip>::/0</ip></networks>
+            <grants>
+                <query>GRANT SELECT ON pulse.*</query>
+                <!-- clickhouse-connect and Grafana read the session's settings on connect. -->
+                <query>GRANT SELECT ON system.settings</query>
+            </grants>
+        </grafana>
+    </users>
+</clickhouse>

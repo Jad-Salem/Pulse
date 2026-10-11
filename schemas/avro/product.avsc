@@ -1,0 +1,14 @@
+{
+  "type": "record",
+  "name": "Product",
+  "namespace": "io.github.jad_salem.pulse.schemas",
+  "doc": "Product catalog entry (compacted topic products, keyed by product_id). Used by the stream processor for enrichment.",
+  "fields": [
+    {"name": "product_id", "type": "string"},
+    {"name": "name", "type": "string"},
+    {"name": "category", "type": "string"},
+    {"name": "brand", "type": "string"},
+    {"name": "list_price_cents", "type": "long"},
+    {"name": "updated_at", "type": {"type": "long", "logicalType": "timestamp-millis"}}
+  ]
+}

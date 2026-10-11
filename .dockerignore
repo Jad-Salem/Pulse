@@ -1,0 +1,13 @@
+# Images are built from the repository root; keep the build context small.
+.git
+.github
+docs
+tests
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/target
+**/*.iml
+.env

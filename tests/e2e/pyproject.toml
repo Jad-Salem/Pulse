@@ -1,0 +1,27 @@
+[project]
+name = "pulse-e2e"
+version = "0.1.0"
+description = "End-to-end tests against the running docker compose stack."
+requires-python = ">=3.12"
+dependencies = [
+    "clickhouse-connect>=1.10,<2",
+    "confluent-kafka>=2.16,<3",
+    "httpx>=0.28",
+    "pytest>=9.1",
+]
+
+[dependency-groups]
+dev = ["mypy>=2.4", "ruff>=0.17"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+
+[tool.mypy]
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["clickhouse_connect.*"]
+ignore_missing_imports = true

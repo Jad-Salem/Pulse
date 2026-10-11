@@ -1,0 +1,312 @@
+# Pulse: the full platform on one machine.
+#   docker compose up -d --build      start everything (first build takes a few minutes)
+#   docker compose down               stop (data is kept in named volumes)
+#   docker compose down -v            stop and delete all data
+# Every value can be overridden from a .env file (see .env.example).
+
+name: pulse
+
+x-kafka: &kafka
+  image: apache/kafka:4.3.1
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+    interval: 10s
+    timeout: 10s
+    retries: 18
+    start_period: 20s
+
+x-kafka-env: &kafka-env
+  CLUSTER_ID: TkCyXbSoR9uvjwBcfcjC9w
+  KAFKA_PROCESS_ROLES: broker,controller
+  KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+  KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+  # Durability: every partition on 3 brokers; a write needs 2 in-sync replicas (acks=all).
+  KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+  KAFKA_MIN_INSYNC_REPLICAS: 2
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+  KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+  KAFKA_LOG_DIRS: /var/lib/kafka/data
+  KAFKA_HEAP_OPTS: -Xms512m -Xmx512m
+
+x-flink: &flink
+  build:
+    context: .
+    dockerfile: processing/stream-processor/Dockerfile
+  image: pulse/stream-processor:dev
+  restart: unless-stopped
+  volumes:
+    - flink-data:/opt/flink/data
+  depends_on:
+    platform-init:
+      condition: service_completed_successfully
+
+# Flink cluster configuration (applied to conf/config.yaml by the image entrypoint).
+# Values must not contain spaces.
+x-flink-properties: &flink-properties |
+  jobmanager.rpc.address: jobmanager
+  taskmanager.numberOfTaskSlots: 2
+  parallelism.default: 3
+  jobmanager.memory.process.size: 1024m
+  taskmanager.memory.process.size: 1536m
+  state.backend.type: rocksdb
+  execution.checkpointing.incremental: true
+  execution.checkpointing.dir: file:///opt/flink/data/checkpoints
+  execution.checkpointing.savepoint-dir: file:///opt/flink/data/savepoints
+  execution.checkpointing.interval: ${FLINK_CHECKPOINT_INTERVAL:-10s}
+  execution.checkpointing.mode: EXACTLY_ONCE
+  execution.checkpointing.min-pause: 5s
+  execution.checkpointing.timeout: 2min
+  execution.checkpointing.externalized-checkpoint-retention: RETAIN_ON_CANCELLATION
+  restart-strategy.type: exponential-delay
+  metrics.reporter.prom.factory.class: org.apache.flink.metrics.prometheus.PrometheusReporterFactory
+  metrics.reporter.prom.port: 9249
+
+x-python-healthcheck: &python-healthcheck
+  test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=3)"]
+  interval: 10s
+  timeout: 5s
+  retries: 12
+  start_period: 10s
+
+services:
+  # ---------------------------------------------------------------- event log
+  kafka-1:
+    <<: *kafka
+    hostname: kafka-1
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENERS: INTERNAL://:9092,CONTROLLER://:9093,EXTERNAL://:19092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-1:9092,EXTERNAL://localhost:19092
+    ports: ["19092:19092"]
+    volumes: [kafka-1-data:/var/lib/kafka/data]
+
+  kafka-2:
+    <<: *kafka
+    hostname: kafka-2
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 2
+      KAFKA_LISTENERS: INTERNAL://:9092,CONTROLLER://:9093,EXTERNAL://:19093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-2:9092,EXTERNAL://localhost:19093
+    ports: ["19093:19093"]
+    volumes: [kafka-2-data:/var/lib/kafka/data]
+
+  kafka-3:
+    <<: *kafka
+    hostname: kafka-3
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 3
+      KAFKA_LISTENERS: INTERNAL://:9092,CONTROLLER://:9093,EXTERNAL://:19094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-3:9092,EXTERNAL://localhost:19094
+    ports: ["19094:19094"]
+    volumes: [kafka-3-data:/var/lib/kafka/data]
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:8.3.2
+    restart: unless-stopped
+    hostname: schema-registry
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka-1:9092,PLAINTEXT://kafka-2:9092,PLAINTEXT://kafka-3:9092
+      SCHEMA_REGISTRY_SCHEMA_COMPATIBILITY_LEVEL: backward
+      SCHEMA_REGISTRY_HEAP_OPTS: -Xms256m -Xmx512m
+    ports: ["8081:8081"]
+    depends_on:
+      kafka-1: {condition: service_healthy}
+      kafka-2: {condition: service_healthy}
+      kafka-3: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8081/subjects"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  kafka-ui:
+    image: kafbat/kafka-ui:v1.5.0
+    restart: unless-stopped
+    environment:
+      KAFKA_CLUSTERS_0_NAME: pulse
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
+      DYNAMIC_CONFIG_ENABLED: "false"
+    ports: ["8080:8080"]
+    depends_on:
+      schema-registry: {condition: service_healthy}
+
+  # ---------------------------------------------------------------- serving store
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.8
+    restart: unless-stopped
+    hostname: clickhouse
+    environment:
+      CLICKHOUSE_USER: ${CLICKHOUSE_ADMIN_USER:-pulse_admin}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_ADMIN_PASSWORD:-pulse-admin-dev}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+      CLICKHOUSE_QUERY_API_PASSWORD: ${CLICKHOUSE_QUERY_API_PASSWORD:-query-api-dev}
+      CLICKHOUSE_GRAFANA_PASSWORD: ${CLICKHOUSE_GRAFANA_PASSWORD:-grafana-dev}
+    ports: ["8123:8123", "9000:9000"]
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - ./infra/clickhouse/config.d/pulse.xml:/etc/clickhouse-server/config.d/pulse.xml:ro
+      - ./infra/clickhouse/users.d/pulse-users.xml:/etc/clickhouse-server/users.d/pulse-users.xml:ro
+    ulimits:
+      nofile: {soft: 262144, hard: 262144}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8123/ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  # ---------------------------------------------------------------- bootstrap (runs once, idempotent)
+  platform-init:
+    build:
+      context: .
+      dockerfile: tools/platform-init/Dockerfile
+    image: pulse/platform-init:dev
+    restart: "no"
+    environment:
+      INIT_KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      INIT_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      INIT_CLICKHOUSE_HOST: clickhouse
+      INIT_CLICKHOUSE_USER: ${CLICKHOUSE_ADMIN_USER:-pulse_admin}
+      INIT_CLICKHOUSE_PASSWORD: ${CLICKHOUSE_ADMIN_PASSWORD:-pulse-admin-dev}
+    depends_on:
+      schema-registry: {condition: service_healthy}
+      clickhouse: {condition: service_healthy}
+
+  # ---------------------------------------------------------------- stream processing
+  jobmanager:
+    <<: *flink
+    hostname: jobmanager
+    command: standalone-job --job-classname io.github.jad_salem.pulse.processor.StreamProcessorJob
+    environment:
+      FLINK_PROPERTIES: *flink-properties
+      PULSE_KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      PULSE_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      PULSE_SESSION_GAP_SECONDS: ${PULSE_SESSION_GAP_SECONDS:-120}
+      PULSE_VELOCITY_THRESHOLD: ${PULSE_VELOCITY_THRESHOLD:-3}
+      PULSE_VELOCITY_WINDOW_SECONDS: ${PULSE_VELOCITY_WINDOW_SECONDS:-60}
+    ports: ["8082:8081"]
+
+  taskmanager:
+    <<: *flink
+    command: taskmanager
+    environment:
+      FLINK_PROPERTIES: *flink-properties
+    deploy:
+      replicas: 2
+    depends_on:
+      - jobmanager
+
+  # ---------------------------------------------------------------- services
+  collector:
+    build:
+      context: .
+      dockerfile: services/collector/Dockerfile
+    image: pulse/collector:dev
+    restart: unless-stopped
+    environment:
+      COLLECTOR_KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      COLLECTOR_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      COLLECTOR_API_KEYS: ${COLLECTOR_API_KEYS:-dev-write-key}
+    ports: ["8000:8000"]
+    healthcheck: *python-healthcheck
+    depends_on:
+      platform-init: {condition: service_completed_successfully}
+
+  query-api:
+    build:
+      context: .
+      dockerfile: services/query-api/Dockerfile
+    image: pulse/query-api:dev
+    restart: unless-stopped
+    environment:
+      QUERY_API_CLICKHOUSE_HOST: clickhouse
+      QUERY_API_CLICKHOUSE_USER: query_api
+      QUERY_API_CLICKHOUSE_PASSWORD: ${CLICKHOUSE_QUERY_API_PASSWORD:-query-api-dev}
+    ports: ["8001:8000"]
+    healthcheck: *python-healthcheck
+    depends_on:
+      platform-init: {condition: service_completed_successfully}
+
+  load-generator:
+    build:
+      context: .
+      dockerfile: tools/load-generator/Dockerfile
+    image: pulse/load-generator:dev
+    restart: unless-stopped
+    environment:
+      LOADGEN_COLLECTOR_URL: http://collector:8000
+      LOADGEN_API_KEY: ${LOADGEN_API_KEY:-dev-write-key}
+      LOADGEN_USERS: ${LOADGEN_USERS:-60}
+      LOADGEN_FRAUD_USERS: ${LOADGEN_FRAUD_USERS:-1}
+      LOADGEN_KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      LOADGEN_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+    depends_on:
+      collector: {condition: service_healthy}
+
+  # ---------------------------------------------------------------- observability
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.10.0
+    restart: unless-stopped
+    command:
+      - --kafka.server=kafka-1:9092
+      - --kafka.server=kafka-2:9092
+      - --kafka.server=kafka-3:9092
+      - --kafka.version=3.6.0  # protocol baseline; Kafka 4 brokers drop pre-2.1 APIs
+    depends_on:
+      kafka-1: {condition: service_healthy}
+      kafka-2: {condition: service_healthy}
+      kafka-3: {condition: service_healthy}
+
+  prometheus:
+    image: prom/prometheus:v3.15.0
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+      - --web.enable-lifecycle
+    ports: ["9090:9090"]
+    volumes:
+      - ./infra/prometheus:/etc/prometheus:ro
+      - prometheus-data:/prometheus
+
+  grafana:
+    image: grafana/grafana:13.2.3
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_PLUGINS_PREINSTALL_SYNC: grafana-clickhouse-datasource@4.22.1
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/dashboards/business-overview.json
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      CLICKHOUSE_GRAFANA_PASSWORD: ${CLICKHOUSE_GRAFANA_PASSWORD:-grafana-dev}
+    ports: ["3000:3000"]
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/etc/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      clickhouse: {condition: service_healthy}
+      prometheus: {condition: service_started}
+
+volumes:
+  kafka-1-data:
+  kafka-2-data:
+  kafka-3-data:
+  clickhouse-data:
+  flink-data:
+  prometheus-data:
+  grafana-data:
