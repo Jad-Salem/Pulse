@@ -67,6 +67,33 @@ All credentials are development defaults; override them in `.env` (see [.env.exa
 
 Stop with `docker compose down`, or `docker compose down -v` to also delete the data.
 
+## Quick reference (Mac)
+
+**Start:** open Docker Desktop, then open Terminal and run:
+
+```bash
+cd ~/pulse
+docker compose up -d
+bash scripts/wait-for-stack.sh 600
+```
+
+When it prints `platform is up`, open Grafana at http://localhost:3000 (`admin` / `admin`). Every other link is in the table above.
+
+**Stop** (closing the windows does not stop the platform):
+
+```bash
+cd ~/pulse
+docker compose down
+```
+
+**Update** after changes are pushed to GitHub:
+
+```bash
+cd ~/pulse
+git pull
+docker compose up -d --build
+```
+
 ## Try it
 
 Send an event:
