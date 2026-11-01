@@ -160,7 +160,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.4</version>
+                <version>3.6.1</version>
                 <configuration>
                     <!-- Same module openings Flink itself uses for its tests on Java 17. -->
                     <argLine>
